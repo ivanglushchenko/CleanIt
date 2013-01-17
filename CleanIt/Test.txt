@@ -1,0 +1,51 @@
+﻿CompilationUnit CompilationUnitSyntax                                         [73] using NewsReader.RT.Client.Foundation.Base;
+  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.Foundation.Base;
+    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.Foundation.Base
+      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.Foundation
+        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
+          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
+            IdentifierName IdentifierNameSyntax                                [1] NewsReader
+            IdentifierName IdentifierNameSyntax                                [1] RT
+          IdentifierName IdentifierNameSyntax                                  [1] Client
+        IdentifierName IdentifierNameSyntax                                    [1] Foundation
+      IdentifierName IdentifierNameSyntax                                      [1] Base
+  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.Foundation.Services;
+    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.Foundation.Services
+      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.Foundation
+        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
+          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
+            IdentifierName IdentifierNameSyntax                                [1] NewsReader
+            IdentifierName IdentifierNameSyntax                                [1] RT
+          IdentifierName IdentifierNameSyntax                                  [1] Client
+        IdentifierName IdentifierNameSyntax                                    [1] Foundation
+      IdentifierName IdentifierNameSyntax                                      [1] Services
+  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.Foundation.Utils;
+    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.Foundation.Utils
+      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.Foundation
+        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
+          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
+            IdentifierName IdentifierNameSyntax                                [1] NewsReader
+            IdentifierName IdentifierNameSyntax                                [1] RT
+          IdentifierName IdentifierNameSyntax                                  [1] Client
+        IdentifierName IdentifierNameSyntax                                    [1] Foundation
+      IdentifierName IdentifierNameSyntax                                      [1] Utils
+  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.UI.Common;
+    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.UI.Common
+      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.UI
+        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
+          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
+            IdentifierName IdentifierNameSyntax                                [1] NewsReader
+            IdentifierName IdentifierNameSyntax                                [1] RT
+          IdentifierName IdentifierNameSyntax                                  [1] Client
+        IdentifierName IdentifierNameSyntax                                    [1] UI
+      IdentifierName IdentifierNameSyntax                                      [1] Common
+  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.UI.Pages;
+    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.UI.Pages
+      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.UI
+        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
+          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
+            IdentifierName IdentifierNameSyntax                                [1] NewsReader
+            IdentifierName IdentifierNameSyntax                                [1] RT
+          IdentifierName IdentifierNameSyntax                                  [1] Client
+        IdentifierName IdentifierNameSyntax                                    [1] UI
+      IdentifierName IdentifierNameSyntax                                      [1] Pages
