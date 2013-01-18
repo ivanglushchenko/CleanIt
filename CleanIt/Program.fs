@@ -1,12 +1,14 @@
 ﻿module CleanIt.Program
 
+open System.IO
 open System.Linq
 open Roslyn.Compilers
 open Roslyn.Compilers.CSharp
 open Roslyn.Compilers.Common
 open Roslyn.Services
 open Roslyn.Services.CSharp
-open CleanIt.UsingDirectiveRewrite
+open CleanUsings
+open CleanRegions
 
 let rec printNode (node:SyntaxNode) level =
    let prepend (s : string) minLength = 
@@ -16,40 +18,37 @@ let rec printNode (node:SyntaxNode) level =
 
    let nodeText = node.GetText()
    let text = postpend (sprintf "%s%A %s" (new System.String(' ', level * 2))  node.Kind (node.GetType().Name)) 75
-   printf "%s %s\n" text (sprintf "%s %s" (prepend (sprintf "[%i]" (nodeText.LineCount)) 6) (nodeText.Lines.First().ToString()))
+   let rec getFirstNonEmptyLine (t:ITextLine list) =
+      match t with
+      | hd::tl ->
+         let s = hd.ToString().Trim('\n', '\r')
+         if System.String.IsNullOrWhiteSpace(s) then getFirstNonEmptyLine tl else s
+      | hd -> hd.ToString()
+
+   printf "%s %s\n" text (sprintf "%s %s" (prepend (sprintf "[%i]" (nodeText.LineCount)) 6) ((getFirstNonEmptyLine (nodeText.Lines |> Seq.toList))))
    node.ChildNodes() |> Seq.iter(fun c -> printNode c (level+1))
-
-
-let (|UsingDirective|_|) (expr:SyntaxNode) = 
-    match expr with 
-    | :? UsingDirectiveSyntax as expr -> Some(expr)
-    | _ -> None
-
-
-let (|QualifiedName|_|) (expr:SyntaxNode) = 
-    match expr with 
-    | :? QualifiedNameSyntax as expr -> Some(expr)
-    | _ -> None
 
 
 let cleanFile fileName = 
     printfn "processing file \"%s\"\n" fileName
-    let code = (new System.IO.StreamReader(fileName)).ReadToEnd()
+    let stream = new FileStream(fileName, FileMode.Open, FileAccess.Read)
+    let code = (new System.IO.StreamReader(stream)).ReadToEnd()
+    stream.Dispose()
+    stream.Close()
     let ast = SyntaxTree.ParseText code
     let root = ast.GetRoot()
-    let rewriter = UsingDirectiveRewrite()
-    let rootAlt = root.Accept(rewriter) :?> CompilationUnitSyntax
-    let usings = rewriter.getCollectedUsings()
-    let rewrittenRoot = rootAlt.AddUsings usings
+    let rewrittenRoot =  root |> cleanUsings |> cleanRegions
+
     printNode rewrittenRoot 0
     let writer = new System.IO.StreamWriter(fileName)
     rewrittenRoot.WriteTo(writer)
     writer.Flush()
     writer.Close()
 
+
 [<EntryPoint>]
 let main argv = 
-    cleanFile "c:\Temp\App.cs"
+    cleanFile "c:\Temp\App2.cs"
     System.Console.ReadLine() |> ignore
     0 // return an integer exit code
 

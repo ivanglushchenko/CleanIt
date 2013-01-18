@@ -1,51 +1,107 @@
-﻿CompilationUnit CompilationUnitSyntax                                         [73] using NewsReader.RT.Client.Foundation.Base;
-  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.Foundation.Base;
-    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.Foundation.Base
-      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.Foundation
-        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
-          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
-            IdentifierName IdentifierNameSyntax                                [1] NewsReader
-            IdentifierName IdentifierNameSyntax                                [1] RT
-          IdentifierName IdentifierNameSyntax                                  [1] Client
-        IdentifierName IdentifierNameSyntax                                    [1] Foundation
-      IdentifierName IdentifierNameSyntax                                      [1] Base
-  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.Foundation.Services;
-    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.Foundation.Services
-      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.Foundation
-        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
-          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
-            IdentifierName IdentifierNameSyntax                                [1] NewsReader
-            IdentifierName IdentifierNameSyntax                                [1] RT
-          IdentifierName IdentifierNameSyntax                                  [1] Client
-        IdentifierName IdentifierNameSyntax                                    [1] Foundation
-      IdentifierName IdentifierNameSyntax                                      [1] Services
-  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.Foundation.Utils;
-    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.Foundation.Utils
-      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.Foundation
-        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
-          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
-            IdentifierName IdentifierNameSyntax                                [1] NewsReader
-            IdentifierName IdentifierNameSyntax                                [1] RT
-          IdentifierName IdentifierNameSyntax                                  [1] Client
-        IdentifierName IdentifierNameSyntax                                    [1] Foundation
-      IdentifierName IdentifierNameSyntax                                      [1] Utils
-  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.UI.Common;
-    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.UI.Common
-      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.UI
-        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
-          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
-            IdentifierName IdentifierNameSyntax                                [1] NewsReader
-            IdentifierName IdentifierNameSyntax                                [1] RT
-          IdentifierName IdentifierNameSyntax                                  [1] Client
-        IdentifierName IdentifierNameSyntax                                    [1] UI
-      IdentifierName IdentifierNameSyntax                                      [1] Common
-  UsingDirective UsingDirectiveSyntax                                          [2] using NewsReader.RT.Client.UI.Pages;
-    QualifiedName QualifiedNameSyntax                                          [1] NewsReader.RT.Client.UI.Pages
-      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client.UI
-        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT.Client
-          QualifiedName QualifiedNameSyntax                                    [1] NewsReader.RT
-            IdentifierName IdentifierNameSyntax                                [1] NewsReader
-            IdentifierName IdentifierNameSyntax                                [1] RT
-          IdentifierName IdentifierNameSyntax                                  [1] Client
-        IdentifierName IdentifierNameSyntax                                    [1] UI
-      IdentifierName IdentifierNameSyntax                                      [1] Pages
+﻿  NamespaceDeclaration NamespaceDeclarationSyntax                             [55]
+    QualifiedName QualifiedNameSyntax                                          [2] NewsReader.RT.Client.UI
+      QualifiedName QualifiedNameSyntax                                        [1] NewsReader.RT.Client
+        QualifiedName QualifiedNameSyntax                                      [1] NewsReader.RT
+          IdentifierName IdentifierNameSyntax                                  [1] NewsReader
+          IdentifierName IdentifierNameSyntax                                  [1] RT
+        IdentifierName IdentifierNameSyntax                                    [1] Client
+      IdentifierName IdentifierNameSyntax                                      [2] UI
+    ClassDeclaration ClassDeclarationSyntax                                   [49]
+      BaseList BaseListSyntax                                                  [2] : Application
+        IdentifierName IdentifierNameSyntax                                    [2] Application
+      ConstructorDeclaration ConstructorDeclarationSyntax                     [11]         /// <summary>
+        ParameterList ParameterListSyntax                                      [2] ()
+        Block BlockSyntax                                                      [6]         {
+          ExpressionStatement ExpressionStatementSyntax                        [2]             this.InitializeComponent();
+            InvocationExpression InvocationExpressionSyntax                    [1]             this.InitializeComponent()
+              MemberAccessExpression MemberAccessExpressionSyntax              [1]             this.InitializeComponent
+                ThisExpression ThisExpressionSyntax                            [1]             this
+                IdentifierName IdentifierNameSyntax                            [1] InitializeComponent
+              ArgumentList ArgumentListSyntax                                  [1] ()
+          ExpressionStatement ExpressionStatementSyntax                        [2]             this.Suspending += OnSuspending;
+            AddAssignExpression BinaryExpressionSyntax                         [1]             this.Suspending += OnSuspending
+              MemberAccessExpression MemberAccessExpressionSyntax              [1]             this.Suspending
+                ThisExpression ThisExpressionSyntax                            [1]             this
+                IdentifierName IdentifierNameSyntax                            [1] Suspending
+              IdentifierName IdentifierNameSyntax                              [1] OnSuspending
+          ExpressionStatement ExpressionStatementSyntax                        [2]             this.UnhandledException += App_UnhandledException;
+            AddAssignExpression BinaryExpressionSyntax                         [1]             this.UnhandledException += App_UnhandledException
+              MemberAccessExpression MemberAccessExpressionSyntax              [1]             this.UnhandledException
+                ThisExpression ThisExpressionSyntax                            [1]             this
+                IdentifierName IdentifierNameSyntax                            [1] UnhandledException
+              IdentifierName IdentifierNameSyntax                              [1] App_UnhandledException
+      MethodDeclaration MethodDeclarationSyntax                                [9]
+        PredefinedType PredefinedTypeSyntax                                    [1] void
+        ParameterList ParameterListSyntax                                      [2] (object sender, UnhandledExceptionEventArgs e)
+          Parameter ParameterSyntax                                            [1] object sender
+            PredefinedType PredefinedTypeSyntax                                [1] object
+          Parameter ParameterSyntax                                            [1] UnhandledExceptionEventArgs e
+            IdentifierName IdentifierNameSyntax                                [1] UnhandledExceptionEventArgs
+        Block BlockSyntax                                                      [7]         {
+          ExpressionStatement ExpressionStatementSyntax                        [2]             LogService.Error(e.Exception);
+            InvocationExpression InvocationExpressionSyntax                    [1]             LogService.Error(e.Exception)
+              MemberAccessExpression MemberAccessExpressionSyntax              [1]             LogService.Error
+                IdentifierName IdentifierNameSyntax                            [1]             LogService
+                IdentifierName IdentifierNameSyntax                            [1] Error
+              ArgumentList ArgumentListSyntax                                  [1] (e.Exception)
+                Argument ArgumentSyntax                                        [1] e.Exception
+                  MemberAccessExpression MemberAccessExpressionSyntax          [1] e.Exception
+                    IdentifierName IdentifierNameSyntax                        [1] e
+                    IdentifierName IdentifierNameSyntax                        [1] Exception
+          LocalDeclarationStatement LocalDeclarationStatementSyntax            [2]
+            VariableDeclaration VariableDeclarationSyntax                      [2]
+              IdentifierName IdentifierNameSyntax                              [2]
+              VariableDeclarator VariableDeclaratorSyntax                      [1] crashLog = await
+                EqualsValueClause EqualsValueClauseSyntax                      [1] = await
+                  IdentifierName IdentifierNameSyntax                          [1] await
+          ExpressionStatement ExpressionStatementSyntax                        [2] ApplicationData.Current.LocalFolder.CreateFileAsync("log.crash", CreationCollisionOp
+            InvocationExpression InvocationExpressionSyntax                    [1] ApplicationData.Current.LocalFolder.CreateFileAsync("log.crash", CreationCollisionOp
+              MemberAccessExpression MemberAccessExpressionSyntax              [1] ApplicationData.Current.LocalFolder.CreateFileAsync
+                MemberAccessExpression MemberAccessExpressionSyntax            [1] ApplicationData.Current.LocalFolder
+                  MemberAccessExpression MemberAccessExpressionSyntax          [1] ApplicationData.Current
+                    IdentifierName IdentifierNameSyntax                        [1] ApplicationData
+                    IdentifierName IdentifierNameSyntax                        [1] Current
+                  IdentifierName IdentifierNameSyntax                          [1] LocalFolder
+                IdentifierName IdentifierNameSyntax                            [1] CreateFileAsync
+              ArgumentList ArgumentListSyntax                                  [1] ("log.crash", CreationCollisionOption.ReplaceExisting)
+                Argument ArgumentSyntax                                        [1] "log.crash"
+                  StringLiteralExpression LiteralExpressionSyntax              [1] "log.crash"
+                Argument ArgumentSyntax                                        [1] CreationCollisionOption.ReplaceExisting
+                  MemberAccessExpression MemberAccessExpressionSyntax          [1] CreationCollisionOption.ReplaceExisting
+                    IdentifierName IdentifierNameSyntax                        [1] CreationCollisionOption
+                    IdentifierName IdentifierNameSyntax                        [1] ReplaceExisting
+          LocalDeclarationStatement LocalDeclarationStatementSyntax            [1]             await FileIO.
+            VariableDeclaration VariableDeclarationSyntax                      [1]             await FileIO.
+              IdentifierName IdentifierNameSyntax                              [1]             await
+              VariableDeclarator VariableDeclaratorSyntax                      [1] FileIO.
+          ExpressionStatement ExpressionStatementSyntax                        [2] WriteTextAsync(crashLog, e.Exception.ToString());
+            InvocationExpression InvocationExpressionSyntax                    [1] WriteTextAsync(crashLog, e.Exception.ToString())
+              IdentifierName IdentifierNameSyntax                              [1] WriteTextAsync
+              ArgumentList ArgumentListSyntax                                  [1] (crashLog, e.Exception.ToString())
+                Argument ArgumentSyntax                                        [1] crashLog
+                  IdentifierName IdentifierNameSyntax                          [1] crashLog
+                Argument ArgumentSyntax                                        [1] e.Exception.ToString()
+                  InvocationExpression InvocationExpressionSyntax              [1] e.Exception.ToString()
+                    MemberAccessExpression MemberAccessExpressionSyntax        [1] e.Exception.ToString
+                      MemberAccessExpression MemberAccessExpressionSyntax      [1] e.Exception
+                        IdentifierName IdentifierNameSyntax                    [1] e
+                        IdentifierName IdentifierNameSyntax                    [1] Exception
+                      IdentifierName IdentifierNameSyntax                      [1] ToString
+                    ArgumentList ArgumentListSyntax                            [1] ()
+      MethodDeclaration MethodDeclarationSyntax                               [12]
+        PredefinedType PredefinedTypeSyntax                                    [1] void
+        ParameterList ParameterListSyntax                                      [2] (LaunchActivatedEventArgs args)
+          Parameter ParameterSyntax                                            [1] LaunchActivatedEventArgs args
+            IdentifierName IdentifierNameSyntax                                [1] LaunchActivatedEventArgs
+        Block BlockSyntax                                                      [3]         {
+      MethodDeclaration MethodDeclarationSyntax                               [13]
+        PredefinedType PredefinedTypeSyntax                                    [1] void
+        ParameterList ParameterListSyntax                                      [2] (object sender, SuspendingEventArgs e)
+          Parameter ParameterSyntax                                            [1] object sender
+            PredefinedType PredefinedTypeSyntax                                [1] object
+          Parameter ParameterSyntax                                            [1] SuspendingEventArgs e
+            IdentifierName IdentifierNameSyntax                                [1] SuspendingEventArgs
+        Block BlockSyntax                                                      [3]         {
+
+
+

@@ -1,4 +1,4 @@
-﻿module CleanIt.UsingDirectiveRewrite
+﻿module CleanUsings
 
 open System.Linq
 open Roslyn.Compilers
@@ -10,7 +10,6 @@ open Roslyn.Services.CSharp
 type UsingDirectiveRewrite() = 
    inherit SyntaxRewriter(false)
 
-   let collect = true
    let usings = System.Collections.Generic.List<UsingDirectiveSyntax>()
 
    member visitor.getCollectedUsings() = usings |> Seq.sortBy (fun (t:UsingDirectiveSyntax) -> t.ToString()) |> Seq.toArray
@@ -25,3 +24,8 @@ type UsingDirectiveRewrite() =
       
       null
    
+let cleanUsings (root:CompilationUnitSyntax) =
+   let rewriter = UsingDirectiveRewrite()
+   let nodeWithNoUsings = root.Accept(rewriter) :?> CompilationUnitSyntax
+   let usings = rewriter.getCollectedUsings()
+   nodeWithNoUsings.AddUsings usings
