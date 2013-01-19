@@ -39,8 +39,8 @@ let cleanFile fileName =
     let root = ast.GetRoot()
     let rewrittenRoot =  root |> cleanUsings |> cleanRegions
 
-    printNode rewrittenRoot 0
-    let writer = new System.IO.StreamWriter(fileName)
+    //printNode rewrittenRoot 0
+    let writer = new System.IO.StreamWriter(fileName + ".proc")
     rewrittenRoot.WriteTo(writer)
     writer.Flush()
     writer.Close()
@@ -48,7 +48,7 @@ let cleanFile fileName =
 
 [<EntryPoint>]
 let main argv = 
-    cleanFile "c:\Temp\App2.cs"
-    System.Console.ReadLine() |> ignore
+    cleanFile "TestCode.txt"//"c:\Temp\App2.cs"
+    //System.Console.ReadLine() |> ignore
     0 // return an integer exit code
 

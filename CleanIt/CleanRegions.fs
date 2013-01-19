@@ -45,22 +45,35 @@ type MemberCollector() =
    inherit SyntaxRewriter(false)
 
    let mutable constructors = List<ConstructorDeclarationSyntax>.Empty
+   let mutable events = List<EventFieldDeclarationSyntax>.Empty
+   let mutable fields = List<FieldDeclarationSyntax>.Empty
    let mutable methods = List<MethodDeclarationSyntax>.Empty
+   let startTokens = System.Collections.Generic.HashSet<MemberDeclarationSyntax>()
+   let endTokens = System.Collections.Generic.HashSet<MemberDeclarationSyntax>()
 
-   member x.Ctors
-     with get() = if constructors.IsEmpty then None else 
-                     let list = constructors |> List.sortBy (fun t -> t.ParameterList.ChildNodes().Count())
-//                     Syntax.RegionDirectiveTrivia(true) :> SyntaxTrivia
-                     //list.Head.Identifier.WithLeadingTrivia([].ToList())
-                     //list.Head.WithIdentifier(
-//                     if list.Head.AttributeLists.Count > 0 then
-//                        list.Head.AttributeLists.First().OpenBracketToken
-                     Some(Syntax.List(list |> List.map (fun t -> t :> MemberDeclarationSyntax)))
+   let toSyntaxList list =
+      let cnvList = list |> List.map (fun t -> t :> MemberDeclarationSyntax)
+      ignore <| startTokens.Add (cnvList.First())
+      ignore <| endTokens.Add (cnvList.Last())
+      Some(Syntax.List(cnvList))
 
-   member x.Methods with get() = if methods.IsEmpty      then None else Some(Syntax.List(methods |> List.sortBy (fun t -> t.Identifier.ValueText) |> List.map (fun t -> t :> MemberDeclarationSyntax)))
+   member x.Ctors       with get() = if constructors.IsEmpty then None else toSyntaxList(constructors |> List.sortBy (fun t -> t.ParameterList.ChildNodes().Count()))
+   member x.Events      with get() = if events.IsEmpty       then None else toSyntaxList(events |> List.sortBy (fun t -> t.Declaration.Variables.First().Identifier.ValueText))
+   member x.Fields      with get() = if fields.IsEmpty       then None else toSyntaxList(fields |> List.sortBy (fun t -> t.Declaration.Variables.First().Identifier.ValueText))
+   member x.Methods     with get() = if methods.IsEmpty      then None else toSyntaxList(methods |> List.sortBy (fun t -> t.Identifier.ValueText))
+   member x.StartTokens with get() = startTokens
+   member x.EndTokens   with get() = endTokens
 
    override x.VisitConstructorDeclaration node = 
       constructors <- node :: constructors
+      null
+
+   override x.VisitEventFieldDeclaration node =
+      events <- node :: events
+      null
+
+   override x.VisitFieldDeclaration node =
+      fields <- node :: fields
       null
 
    override x.VisitMethodDeclaration node =
@@ -68,19 +81,114 @@ type MemberCollector() =
       null
 
 
-type RegionRewriter(collector:MemberCollector) = 
+type MemberArranger(collector:MemberCollector) = 
    inherit SyntaxRewriter(false)
 
    override x.VisitClassDeclaration node =
-      let extend ((node:ClassDeclarationSyntax), (members:SyntaxList<MemberDeclarationSyntax> option)) =
+      let extend (members:SyntaxList<MemberDeclarationSyntax> option) (node:ClassDeclarationSyntax) =
          match members with
          | Some(list) -> node.WithMembers(Syntax.List(list.Concat(node.Members)))
          | None       -> node
+      
+      base.VisitClassDeclaration (node |> extend collector.Methods |> extend collector.Fields |> extend collector.Events |> extend collector.Ctors)
 
-      ((node, collector.Methods) |> extend, collector.Ctors) |> extend :> SyntaxNode
+
+type RegionRewriter(collector:MemberCollector) = 
+   inherit SyntaxRewriter(false)
+
+   let mutable ctorsRegionOpened = false
+   let mutable ctorsRegionClosed = false
+   let mutable eventsRegionOpened = false
+   let mutable eventsRegionClosed = false
+   let mutable fieldsRegionOpened = false
+   let mutable fieldsRegionClosed = false
+   let mutable methodsRegionOpened = false
+   let mutable methodsRegionClosed = false
+
+   let addRegionOpenOrClose (isOpen:bool) (token:SyntaxToken) (name:string) =
+      let rec removeDoubleEndlines list =
+         match list with
+         | EndOfLine(t1) :: EndOfLine(t2) :: tl -> removeDoubleEndlines (t2 :: tl)
+         | hd :: tl                             -> hd :: removeDoubleEndlines tl
+         | _                                    -> []
+      let formattedList = removeDoubleEndlines (token.LeadingTrivia |> Seq.toList)
+      let regionList = (SyntaxTree.ParseText ((if isOpen then "#region " else "#endregion ") + name)).GetRoot().GetLeadingTrivia() |> Seq.toList
+      match formattedList with
+      | EndOfLine(t1) :: Whitespace(t2) :: tl -> 
+         let trivia = [Syntax.EndOfLine(t1.ToFullString()); Syntax.Whitespace(t2.ToFullString())] @ regionList @ (if isOpen = false then [Syntax.EndOfLine(t1.ToFullString())] else []) @ [Syntax.EndOfLine(t1.ToFullString()); t1; t2] @ tl
+         token.WithLeadingTrivia(trivia)
+      | Whitespace(t1) :: tl -> token.WithLeadingTrivia([Syntax.Whitespace(t1.ToFullString())] @ regionList @ [Syntax.EndOfLine("\r\n", true)] @ formattedList)
+      | _ -> token.WithLeadingTrivia(regionList @ formattedList)
+
+   let openRegion = addRegionOpenOrClose true
+   let closeRegion = addRegionOpenOrClose false
+
+   override x.VisitToken token =
+      match (token.Parent, ctorsRegionOpened, eventsRegionOpened, fieldsRegionOpened, methodsRegionOpened) with
+      | (:? ConstructorDeclarationSyntax, false,     _,     _,     _) -> 
+         ctorsRegionOpened <- true
+         openRegion token ".ctors"
+      | (:? EventFieldDeclarationSyntax,   true, false,     _,     _) ->
+         eventsRegionOpened <- true
+         ctorsRegionClosed <- true
+         closeRegion (openRegion token "Events") ".ctors"
+      | (:? EventFieldDeclarationSyntax,      _, false,     _,     _) ->
+         eventsRegionOpened <- true
+         openRegion token "Events"
+      | (:? FieldDeclarationSyntax,        true, false, false,     _) ->
+         fieldsRegionOpened <- true
+         closeRegion (openRegion token "Fields") ".ctors"
+      | (:? FieldDeclarationSyntax,           _,  true, false,     _) ->
+         fieldsRegionOpened <- true
+         closeRegion (openRegion token "Fields") "Events"
+      | (:? FieldDeclarationSyntax,           _,     _, false,     _) ->
+         fieldsRegionOpened <- true
+         openRegion token "Fields"
+      | (:? MethodDeclarationSyntax,       true, false, false, false) ->
+         methodsRegionOpened <- true
+         closeRegion (openRegion token "Methods") ".ctors"
+      | (:? MethodDeclarationSyntax,          _,   true, false, false) ->
+         methodsRegionOpened <- true
+         closeRegion (openRegion token "Methods") "Events"
+      | (:? MethodDeclarationSyntax,          _,      _,  true, false) ->
+         methodsRegionOpened <- true
+         closeRegion (openRegion token "Methods") "Fields"
+      | (:? MethodDeclarationSyntax,          _,     _,     _, false) ->
+         methodsRegionOpened <- true
+         openRegion token "Methods"
+      | (:? ClassDeclarationSyntax,        true, false, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
+         closeRegion token ".ctors"
+      | (:? ClassDeclarationSyntax,           _,  true, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
+         closeRegion token "Events"
+      | (:? ClassDeclarationSyntax,           _,     _,  true, false) when token.Kind = SyntaxKind.CloseBraceToken ->
+         closeRegion token "Fields"
+      | (:? ClassDeclarationSyntax,           _,     _,     _, true)  when token.Kind = SyntaxKind.CloseBraceToken ->
+         closeRegion token "Methods"
+      | _ -> base.VisitToken token
+
+
+type FormatHelper() =
+   inherit SyntaxRewriter(false)
+
+   override x.VisitToken token =
+      match token.Kind with
+      | SyntaxKind.SemicolonToken -> 
+         match token.GetPreviousToken().Kind with
+         | SyntaxKind.CloseBraceToken | SyntaxKind.CloseParenToken -> token.WithLeadingTrivia().WithTrailingTrivia(Syntax.ElasticCarriageReturnLineFeed)
+         | _ -> token
+      | SyntaxKind.CloseBraceToken ->
+         match token.GetNextToken().Kind with
+         | SyntaxKind.CloseParenToken | SyntaxKind.SemicolonToken -> token.WithTrailingTrivia()
+         | _ -> token
+      | SyntaxKind.CloseParenToken ->
+         if token.GetPreviousToken().Kind = SyntaxKind.CloseBraceToken then token.WithLeadingTrivia() else token
+      | _ -> token
 
 
 let cleanRegions (root:CompilationUnitSyntax) =
    let collector = MemberCollector()
    let cleanRoot = root.Accept(RegionRemover()).Accept(collector)
-   cleanRoot.Accept(RegionRewriter(collector))
+   cleanRoot.Accept(MemberArranger(collector)).Accept(RegionRewriter(collector))
+
+//var formattedCode = new CodeBeautifier().Visit(root.Format()).GetFullText();
+   

@@ -1,0 +1,121 @@
+﻿   ClassDeclaration ClassDeclarationSyntax                                   [63]     /// <summary>
+     BaseList BaseListSyntax                                                  [2] : Application
+       IdentifierName IdentifierNameSyntax                                    [2] Application
+     ConstructorDeclaration ConstructorDeclarationSyntax                     [12]         /// <summary>
+       ParameterList ParameterListSyntax                                      [2] ()
+       Block BlockSyntax                                                      [6]         {
+         ExpressionStatement ExpressionStatementSyntax                        [2]             this.InitializeComponent();
+           InvocationExpression InvocationExpressionSyntax                    [1]             this.InitializeComponent()
+             MemberAccessExpression MemberAccessExpressionSyntax              [1]             this.InitializeComponent
+               ThisExpression ThisExpressionSyntax                            [1]             this
+               IdentifierName IdentifierNameSyntax                            [1] InitializeComponent
+             ArgumentList ArgumentListSyntax                                  [1] ()
+         ExpressionStatement ExpressionStatementSyntax                        [2]             this.Suspending += OnSuspending;
+           AddAssignExpression BinaryExpressionSyntax                         [1]             this.Suspending += OnSuspending
+             MemberAccessExpression MemberAccessExpressionSyntax              [1]             this.Suspending
+               ThisExpression ThisExpressionSyntax                            [1]             this
+               IdentifierName IdentifierNameSyntax                            [1] Suspending
+             IdentifierName IdentifierNameSyntax                              [1] OnSuspending
+         ExpressionStatement ExpressionStatementSyntax                        [2]             this.UnhandledException += App_UnhandledException;
+           AddAssignExpression BinaryExpressionSyntax                         [1]             this.UnhandledException += App_UnhandledException
+             MemberAccessExpression MemberAccessExpressionSyntax              [1]             this.UnhandledException
+               ThisExpression ThisExpressionSyntax                            [1]             this
+               IdentifierName IdentifierNameSyntax                            [1] UnhandledException
+             IdentifierName IdentifierNameSyntax                              [1] App_UnhandledException
+     ConstructorDeclaration ConstructorDeclarationSyntax                      [6]         public App(bool a)
+       ParameterList ParameterListSyntax                                      [2] (bool a)
+         Parameter ParameterSyntax                                            [1] bool a
+           PredefinedType PredefinedTypeSyntax                                [1] bool
+       Block BlockSyntax                                                      [3]      {
+     EventFieldDeclaration EventFieldDeclarationSyntax                        [3]      public event Action MyEvent1;
+       VariableDeclaration VariableDeclarationSyntax                          [1] Action MyEvent1
+         IdentifierName IdentifierNameSyntax                                  [1] Action
+         VariableDeclarator VariableDeclaratorSyntax                          [1] MyEvent1
+     EventFieldDeclaration EventFieldDeclarationSyntax                        [4]      public event Action MyEvent2;
+       VariableDeclaration VariableDeclarationSyntax                          [1] Action MyEvent2
+         IdentifierName IdentifierNameSyntax                                  [1] Action
+         VariableDeclarator VariableDeclaratorSyntax                          [1] MyEvent2
+     FieldDeclaration FieldDeclarationSyntax                                  [3]      protected DateTime dt;
+       VariableDeclaration VariableDeclarationSyntax                          [1] DateTime dt
+         IdentifierName IdentifierNameSyntax                                  [1] DateTime
+         VariableDeclarator VariableDeclaratorSyntax                          [1] dt
+     FieldDeclaration FieldDeclarationSyntax                                  [3]      private int i;
+       VariableDeclaration VariableDeclarationSyntax                          [1] int i
+         PredefinedType PredefinedTypeSyntax                                  [1] int
+         VariableDeclarator VariableDeclaratorSyntax                          [1] i
+     FieldDeclaration FieldDeclarationSyntax                                  [2]      private string j;
+       VariableDeclaration VariableDeclarationSyntax                          [1] string j
+         PredefinedType PredefinedTypeSyntax                                  [1] string
+         VariableDeclarator VariableDeclaratorSyntax                          [1] j
+     MethodDeclaration MethodDeclarationSyntax                                [9]         private async void App_UnhandledException(object sender, UnhandledExce
+       PredefinedType PredefinedTypeSyntax                                    [1] void
+       ParameterList ParameterListSyntax                                      [2] (object sender, UnhandledExceptionEventArgs e)
+         Parameter ParameterSyntax                                            [1] object sender
+           PredefinedType PredefinedTypeSyntax                                [1] object
+         Parameter ParameterSyntax                                            [1] UnhandledExceptionEventArgs e
+           IdentifierName IdentifierNameSyntax                                [1] UnhandledExceptionEventArgs
+       Block BlockSyntax                                                      [7]         {
+         ExpressionStatement ExpressionStatementSyntax                        [2]             LogService.Error(e.Exception);
+           InvocationExpression InvocationExpressionSyntax                    [1]             LogService.Error(e.Exception)
+             MemberAccessExpression MemberAccessExpressionSyntax              [1]             LogService.Error
+               IdentifierName IdentifierNameSyntax                            [1]             LogService
+               IdentifierName IdentifierNameSyntax                            [1] Error
+             ArgumentList ArgumentListSyntax                                  [1] (e.Exception)
+               Argument ArgumentSyntax                                        [1] e.Exception
+                 MemberAccessExpression MemberAccessExpressionSyntax          [1] e.Exception
+                   IdentifierName IdentifierNameSyntax                        [1] e
+                   IdentifierName IdentifierNameSyntax                        [1] Exception
+         LocalDeclarationStatement LocalDeclarationStatementSyntax            [2]             var crashLog = await
+           VariableDeclaration VariableDeclarationSyntax                      [2]             var crashLog = await
+             IdentifierName IdentifierNameSyntax                              [2]             var
+             VariableDeclarator VariableDeclaratorSyntax                      [1] crashLog = await
+               EqualsValueClause EqualsValueClauseSyntax                      [1] = await
+                 IdentifierName IdentifierNameSyntax                          [1] await
+         ExpressionStatement ExpressionStatementSyntax                        [2] ApplicationData.Current.LocalFolder.CreateFileAsync("log.crash", CreationColli
+           InvocationExpression InvocationExpressionSyntax                    [1] ApplicationData.Current.LocalFolder.CreateFileAsync("log.crash", CreationColli
+             MemberAccessExpression MemberAccessExpressionSyntax              [1] ApplicationData.Current.LocalFolder.CreateFileAsync
+               MemberAccessExpression MemberAccessExpressionSyntax            [1] ApplicationData.Current.LocalFolder
+                 MemberAccessExpression MemberAccessExpressionSyntax          [1] ApplicationData.Current
+                   IdentifierName IdentifierNameSyntax                        [1] ApplicationData
+                   IdentifierName IdentifierNameSyntax                        [1] Current
+                 IdentifierName IdentifierNameSyntax                          [1] LocalFolder
+               IdentifierName IdentifierNameSyntax                            [1] CreateFileAsync
+             ArgumentList ArgumentListSyntax                                  [1] ("log.crash", CreationCollisionOption.ReplaceExisting)
+               Argument ArgumentSyntax                                        [1] "log.crash"
+                 StringLiteralExpression LiteralExpressionSyntax              [1] "log.crash"
+               Argument ArgumentSyntax                                        [1] CreationCollisionOption.ReplaceExisting
+                 MemberAccessExpression MemberAccessExpressionSyntax          [1] CreationCollisionOption.ReplaceExisting
+                   IdentifierName IdentifierNameSyntax                        [1] CreationCollisionOption
+                   IdentifierName IdentifierNameSyntax                        [1] ReplaceExisting
+         LocalDeclarationStatement LocalDeclarationStatementSyntax            [1]             await FileIO.
+           VariableDeclaration VariableDeclarationSyntax                      [1]             await FileIO.
+             IdentifierName IdentifierNameSyntax                              [1]             await
+             VariableDeclarator VariableDeclaratorSyntax                      [1] FileIO.
+         ExpressionStatement ExpressionStatementSyntax                        [2] WriteTextAsync(crashLog, e.Exception.ToString());
+           InvocationExpression InvocationExpressionSyntax                    [1] WriteTextAsync(crashLog, e.Exception.ToString())
+             IdentifierName IdentifierNameSyntax                              [1] WriteTextAsync
+             ArgumentList ArgumentListSyntax                                  [1] (crashLog, e.Exception.ToString())
+               Argument ArgumentSyntax                                        [1] crashLog
+                 IdentifierName IdentifierNameSyntax                          [1] crashLog
+               Argument ArgumentSyntax                                        [1] e.Exception.ToString()
+                 InvocationExpression InvocationExpressionSyntax              [1] e.Exception.ToString()
+                   MemberAccessExpression MemberAccessExpressionSyntax        [1] e.Exception.ToString
+                     MemberAccessExpression MemberAccessExpressionSyntax      [1] e.Exception
+                       IdentifierName IdentifierNameSyntax                    [1] e
+                       IdentifierName IdentifierNameSyntax                    [1] Exception
+                     IdentifierName IdentifierNameSyntax                      [1] ToString
+                   ArgumentList ArgumentListSyntax                            [1] ()
+     MethodDeclaration MethodDeclarationSyntax                               [11]         /// <summary>
+       PredefinedType PredefinedTypeSyntax                                    [1] void
+       ParameterList ParameterListSyntax                                      [2] (LaunchActivatedEventArgs args)
+         Parameter ParameterSyntax                                            [1] LaunchActivatedEventArgs args
+           IdentifierName IdentifierNameSyntax                                [1] LaunchActivatedEventArgs
+       Block BlockSyntax                                                      [3]         {
+     MethodDeclaration MethodDeclarationSyntax                               [12]         /// <summary>
+       PredefinedType PredefinedTypeSyntax                                    [1] void
+       ParameterList ParameterListSyntax                                      [2] (object sender, SuspendingEventArgs e)
+         Parameter ParameterSyntax                                            [1] object sender
+           PredefinedType PredefinedTypeSyntax                                [1] object
+         Parameter ParameterSyntax                                            [1] SuspendingEventArgs e
+           IdentifierName IdentifierNameSyntax                                [1] SuspendingEventArgs
+       Block BlockSyntax                                                      [3]         {
