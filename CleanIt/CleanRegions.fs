@@ -23,12 +23,13 @@ type RegionRemover() =
    override x.VisitToken token =
       let rec removeRegions (list:SyntaxTrivia list) =
          match list with
-         | EndOfLine(t1)::Whitespace(t2)::RegionDirective(hd)::tl    -> removeRegions (t1 :: tl)
-         | RegionDirective(hd)::tl                                   -> removeRegions tl
-         | EndOfLine(t1)::Whitespace(t2)::EndRegionDirective(hd)::tl -> removeRegions (t1 :: tl)
-         | EndRegionDirective(hd)::tl                                -> removeRegions tl
-         | hd::tl                                                    -> hd :: removeRegions tl
-         | _                                                         -> []
+         | EndOfLine(t1) :: Whitespace(t2) :: RegionDirective(hd) :: tl    -> removeRegions (t1 :: tl)
+         | RegionDirective(hd) :: tl                                       -> removeRegions tl
+         | EndOfLine(t1) :: Whitespace(t2) :: EndRegionDirective(hd) :: tl -> removeRegions (t1 :: tl)
+         | EndRegionDirective(hd) :: tl                                    -> removeRegions tl
+         | EndOfLine(t1) :: EndOfLine(t2) :: tl                            -> removeRegions (t2 :: tl)
+         | hd::tl                                                          -> hd :: removeRegions tl
+         | _                                                               -> []
 
       match (token.HasLeadingTrivia, token.HasTrailingTrivia) with
       | (true, true)   -> token.WithLeadingTrivia(removeRegions (token.LeadingTrivia |> Seq.toList)).WithTrailingTrivia(removeRegions (token.TrailingTrivia |> Seq.toList))
@@ -97,20 +98,14 @@ type RegionRewriter(collector:MemberCollector) =
    let mutable methodsRegionOpened = false
 
    let addRegionOpenOrClose (isOpen:bool) (token:SyntaxToken) (name:string) =
-      let rec removeDoubleEndlines list =
-         match list with
-         | EndOfLine(t1) :: EndOfLine(t2) :: tl -> removeDoubleEndlines (t2 :: tl)
-         | hd :: tl                             -> hd :: removeDoubleEndlines tl
-         | _                                    -> []
-      let formattedList = removeDoubleEndlines (token.LeadingTrivia |> Seq.toList)
-      //let eee = Syntax.RegionDirectiveTrivia()(SyntaxKind.EndRegionKeyword, "aaa")
-      let regionList = tab() :: ((SyntaxTree.ParseText ((if isOpen then "#region " else "#endregion ") + name)).GetRoot().GetLeadingTrivia() |> Seq.toList)
+      let formattedList = (token.LeadingTrivia |> Seq.toList)
+      let region = if isOpen then SyntaxTree.ParseText("#region " + name).GetRoot().GetLeadingTrivia().First() else Syntax.Trivia(Syntax.EndRegionDirectiveTrivia(true))
       match formattedList with
       | EndOfLine(t1) :: Whitespace(t2) :: tl -> 
-         let trivia = [eol(); Syntax.Whitespace(t2.ToFullString())] @ regionList @ (if isOpen = false then [eol()] else []) @ [eol(); t1; t2] @ tl
+         let trivia = [eol(); tab(); region; eol(); eol(); t2] @ tl
          token.WithLeadingTrivia(trivia)
-      | Whitespace(t1) :: tl -> token.WithLeadingTrivia([Syntax.Whitespace(t1.ToFullString())] @ regionList @ [eol()] @ formattedList)
-      | _ -> token.WithLeadingTrivia(eol() :: tab() :: regionList @ formattedList)
+      | Whitespace(t1) :: tl -> token.WithLeadingTrivia([Syntax.Whitespace(t1.ToFullString()); tab(); region] @ [eol(); eol()] @ formattedList)
+      | _ -> token.WithLeadingTrivia(eol() :: tab() :: region :: formattedList)
 
    let openRegion = addRegionOpenOrClose true
    let closeRegion = addRegionOpenOrClose false
@@ -203,7 +198,7 @@ let cleanRegions (root:CompilationUnitSyntax) =
    let cleanRoot = root.Accept(RegionRemover()).Accept(collector)
    let fmtOptions = FormattingOptions(false, 4, 4)
    let fmtHelper = FormatHelper()
-   cleanRoot.Accept(MemberArranger(collector)).Accept(RegionRewriter(collector)).Format(fmtOptions).GetFormattedRoot() :?> SyntaxNode |> fmtHelper.Visit
+   cleanRoot.Accept(MemberArranger(collector)).Accept(RegionRewriter(collector))//.Format(fmtOptions).GetFormattedRoot() :?> SyntaxNode |> fmtHelper.Visit
 
 //var formattedCode = new CodeBeautifier().Visit(root.Format()).GetFullText();
    
