@@ -17,6 +17,29 @@ let (|Whitespace|_|) (expr:SyntaxTrivia) =         if expr.Kind = SyntaxKind.Whi
 let eol() = Syntax.EndOfLine("\r\n", false)
 let tab() = Syntax.Whitespace("\t", false)
 
+
+type Construct =
+    | DependencyProperty of string * FieldDeclarationSyntax * PropertyDeclarationSyntax
+    | Property of string * FieldDeclarationSyntax * PropertyDeclarationSyntax
+    
+let getConstructName = function
+   | DependencyProperty(name, _, _) -> name
+   | Property(name, _, _)           -> name
+
+let getConstructNodes = function
+   | DependencyProperty(name, f, p) -> [f :> MemberDeclarationSyntax; p :> MemberDeclarationSyntax]
+   | Property(name, f, p)           -> [f :> MemberDeclarationSyntax; p :> MemberDeclarationSyntax]
+
+
+type Member =
+   | Ctor
+   | Event
+   | Field
+   | Property
+   | Method
+   | Other
+
+
 type RegionRemover() = 
    inherit SyntaxRewriter(false)
 
@@ -41,38 +64,68 @@ type RegionRemover() =
 type MemberCollector() = 
    inherit SyntaxRewriter(false)
 
-   let mutable constructors = List<ConstructorDeclarationSyntax>.Empty
-   let mutable events = List<EventFieldDeclarationSyntax>.Empty
-   let mutable fields = List<FieldDeclarationSyntax>.Empty
-   let mutable properties = List<PropertyDeclarationSyntax>.Empty
-   let mutable methods = List<MethodDeclarationSyntax>.Empty
+   let join (s:string seq) = 
+      let l = s.ToArray()
+      if l.Length = 0 then ""
+      else " " + System.String.Join(":", l)
 
-   let toSyntaxList list = Some(Syntax.List(list |> List.map (fun t -> t :> MemberDeclarationSyntax)))
+   let getSignature (pSyntax:ParameterListSyntax) = join (pSyntax.Parameters |> Seq.map (fun t -> t.Type.ToString()))
+   let getModifiers (tokens:SyntaxTokenList) = join (tokens |> Seq.map (fun t -> t.ValueText))
 
-   member x.Ctors       with get() = if constructors.IsEmpty then None else toSyntaxList(constructors |> List.sortBy (fun t -> t.ParameterList.ChildNodes().Count()))
-   member x.Events      with get() = if events.IsEmpty       then None else toSyntaxList(events |> List.sortBy (fun t -> t.Declaration.Variables.First().Identifier.ValueText))
-   member x.Fields      with get() = if fields.IsEmpty       then None else toSyntaxList(fields |> List.sortBy (fun t -> t.Declaration.Variables.First().Identifier.ValueText))
-   member x.Properties  with get() = if properties.IsEmpty   then None else toSyntaxList(properties |> List.sortBy (fun t -> t.Identifier.ValueText))
-   member x.Methods     with get() = if methods.IsEmpty      then None else toSyntaxList(methods |> List.sortBy (fun t -> t.Identifier.ValueText))
+   let isStatic (tokens:SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "static")
+   let isPublic (tokens:SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "public")
+
+   let mutable constructs = Map.empty<string, Construct>
+   let mutable constructors = Map.empty<string, ConstructorDeclarationSyntax>
+   let mutable events = Map.empty<string, EventFieldDeclarationSyntax>
+   let mutable fields = Map.empty<string, FieldDeclarationSyntax>
+   let mutable properties = Map.empty<string, PropertyDeclarationSyntax>
+   let mutable methods = Map.empty<string, MethodDeclarationSyntax>
+
+   let toSyntaxList (map:Map<string, #MemberDeclarationSyntax>) regionType = 
+      if map.IsEmpty = true then None
+      else Some(Syntax.List(map |> Map.toList |> List.map (fun (t1, t2) -> t2 :> MemberDeclarationSyntax)))
+
+   let collectConstructs name =
+      let dpPropName = name + "Property"
+      if fields.ContainsKey(dpPropName) && properties.ContainsKey(name) then
+         let fNode = fields.[dpPropName]
+         let pNode = properties.[name]
+         if (isStatic fNode.Modifiers) && fNode.Declaration.Type.ToString() = "DependencyProperty" then
+            let c = DependencyProperty(name, fNode, pNode)
+            constructs <- constructs.Add (name, c)
+            fields <- fields.Remove(dpPropName)
+            properties <- properties.Remove(name)
+
+
+   member x.Ctors       with get() = toSyntaxList constructors Ctor
+   member x.Events      with get() = toSyntaxList events Event
+   member x.Fields      with get() = toSyntaxList fields Field
+   member x.Properties  with get() = toSyntaxList properties Property
+   member x.Methods     with get() = toSyntaxList methods Method
+   member x.Constructs  with get() = if constructs.IsEmpty   then None else Some(Syntax.List(constructs |> Map.toList |> List.collect (fun (t1, t2) -> getConstructNodes t2)))
 
    override x.VisitConstructorDeclaration node = 
-      constructors <- node :: constructors
+      constructors <- constructors.Add (node.ParameterList.ChildNodes().Count().ToString() + getModifiers(node.Modifiers), node)
       null
 
    override x.VisitEventFieldDeclaration node =
-      events <- node :: events
+      events <- events.Add (node.Declaration.Variables.First().Identifier.ValueText, node)
       null
 
    override x.VisitFieldDeclaration node =
-      fields <- node :: fields
+      let name = node.Declaration.Variables.First().Identifier.ValueText
+      fields <- fields.Add (name, node)
+      collectConstructs (if name.EndsWith "Property" then name.Substring(0, name.Length - 8) else name)
       null
 
    override x.VisitPropertyDeclaration node =
-      properties <- node :: properties
+      properties <- properties.Add (node.Identifier.ValueText, node)
+      collectConstructs node.Identifier.ValueText
       null
 
    override x.VisitMethodDeclaration node =
-      methods <- node :: methods
+      methods <- methods.Add (node.Identifier.ValueText + getSignature(node.ParameterList), node)
       null
 
 
@@ -84,8 +137,7 @@ type MemberArranger(collector:MemberCollector) =
          match members with
          | Some(list) -> node.WithMembers(Syntax.List(list.Concat(node.Members)))
          | None       -> node
-      
-      base.VisitClassDeclaration (node |> extend collector.Methods |> extend collector.Properties |> extend collector.Fields |> extend collector.Events |> extend collector.Ctors)
+      base.VisitClassDeclaration (node |> extend collector.Methods |> extend collector.Properties |> extend collector.Constructs |> extend collector.Fields |> extend collector.Events |> extend collector.Ctors)
 
 
 type RegionRewriter(collector:MemberCollector) = 
@@ -115,14 +167,12 @@ type RegionRewriter(collector:MemberCollector) =
       | (:? ConstructorDeclarationSyntax, false,     _,     _,     _,     _) -> 
          ctorsRegionOpened <- true
          openRegion token ".ctors"
-
       | (:? EventFieldDeclarationSyntax,   true, false,     _,     _,     _) ->
          eventsRegionOpened <- true
          closeRegion (openRegion token "Events") ".ctors"
       | (:? EventFieldDeclarationSyntax,      _, false,     _,     _,     _) ->
          eventsRegionOpened <- true
          openRegion token "Events"
-
       | (:? FieldDeclarationSyntax,        true, false, false,     _,     _) ->
          fieldsRegionOpened <- true
          closeRegion (openRegion token "Fields") ".ctors"
@@ -132,7 +182,6 @@ type RegionRewriter(collector:MemberCollector) =
       | (:? FieldDeclarationSyntax,           _,     _, false,     _,     _) ->
          fieldsRegionOpened <- true
          openRegion token "Fields"
-
       | (:? PropertyDeclarationSyntax,     true, false, false, false,     _) ->
          propertiesRegionOpened <- true                                      
          closeRegion (openRegion token "Properties") ".ctors"             
@@ -145,7 +194,6 @@ type RegionRewriter(collector:MemberCollector) =
       | (:? PropertyDeclarationSyntax,        _,     _,     _, false,     _) ->
          propertiesRegionOpened <- true
          openRegion token "Properties"
-
       | (:? MethodDeclarationSyntax,       true, false, false, false, false) ->
          methodsRegionOpened <- true
          closeRegion (openRegion token "Methods") ".ctors"
@@ -161,7 +209,6 @@ type RegionRewriter(collector:MemberCollector) =
       | (:? MethodDeclarationSyntax,          _,     _,     _,     _, false) ->
          methodsRegionOpened <- true
          openRegion token "Methods"
-
       | (:? ClassDeclarationSyntax,        true, false, false, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
          closeRegion token ".ctors"
       | (:? ClassDeclarationSyntax,           _,  true, false, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
