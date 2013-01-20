@@ -1,90 +1,128 @@
-﻿
-using NewsReader.RT.Client.Foundation.Base;
-using NewsReader.RT.Client.Foundation.Services;
-
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System;
-using Windows.ApplicationModel.Activation;
-using Windows.ApplicationModel;
-using Windows.Foundation.Collections;
-using Windows.Foundation;
-using Windows.Storage;
-using Windows.UI.Xaml.Controls.Primitives;
-using Windows.UI.Xaml.Controls;
-using Windows.UI.Xaml.Data;
-using Windows.UI.Xaml.Input;
-using Windows.UI.Xaml.Media;
-using Windows.UI.Xaml.Navigation;
-using Windows.UI.Xaml;
+using System.Text;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
+using System.Windows.Navigation;
+using System.Windows.Shapes;
 
-// The Split App template is documented at http://go.microsoft.com/fwlink/?LinkId=234228
-
-namespace NewsReader.RT.Client.UI
+namespace BetterWpfControls
 {
-
-    /// <summary>
-    /// Provides application-specific behavior to supplement the default Application class.
-    /// </summary>
-    sealed partial class App : Application
+    public class CollapsibleGridSplitter : GridSplitter
     {
-	private string j;
+        #region .ctors
 
-        /// <summary>
-        /// Invoked when application execution is being suspended.  Application state is saved
-        /// without knowing whether the application will be terminated or resumed with the contents
-        /// of memory still intact.
-        /// </summary>
-        /// <param name="sender">The source of the suspend request.</param>
-        /// <param name="e">Details about the suspend request.</param>
-        private async void OnSuspending(object sender, SuspendingEventArgs e)
-        {
-        }
-	
-	private int i;
-
-        private async void App_UnhandledException(object sender, UnhandledExceptionEventArgs e)
-        {
-            LogService.Error(e.Exception);
-
-            var crashLog = await ApplicationData.Current.LocalFolder.CreateFileAsync("log.crash", CreationCollisionOption.ReplaceExisting);
-            await FileIO.WriteTextAsync(crashLog, e.Exception.ToString());
-        }
-
-	#region A
-        /// <summary>
-        /// Initializes the singleton Application object.  This is the first line of authored code
-        /// executed, and as such is the logical equivalent of main() or WinMain().
-        /// </summary>
-        public App()
-        {
-            this.InitializeComponent();
-            this.Suspending += OnSuspending;
-            this.UnhandledException += App_UnhandledException;
-        }
-
-	#region
-
-	public event Action MyEvent2;
-
-        /// <summary>
-        /// Invoked when the application is launched normally by the end user.  Other entry points
-        /// will be used when the application is launched to open a specific file, to display
-        /// search results, and so forth.
-        /// </summary>
-        /// <param name="args">Details about the launch request and process.</param>
-        protected override async void OnLaunched(LaunchActivatedEventArgs args)
+        static CollapsibleGridSplitter()
         {
         }
 
-	protected DateTime dt;
+        public CollapsibleGridSplitter()
+        {
+        }
 
+        #endregion .ctors
 
-        public App(bool a)
-	{
-	}
+        #region Fields
 
-	public event Action MyEvent1;
+        private UIElement _collapsiblePane;
+        private GridDefinition _collapsiblePaneGridInfo;
+        private ContentAdorner _adorner;
+        private Button _button;
+
+        #endregion Fields
+
+        #region Properties
+
+        public Dock CollapseDirection
+        {
+            get { return (Dock)GetValue(CollapseDirectionProperty); }
+            set { SetValue(CollapseDirectionProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CollapseDirection.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CollapseDirectionProperty =
+            DependencyProperty.Register("CollapseDirection", typeof(Dock), typeof(CollapsibleGridSplitter), new UIPropertyMetadata(Dock.Left));
+
+        public double? Value
+        {
+            get { return (double?)GetValue(ValueProperty); }
+            set { SetValue(ValueProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for Value.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ValueProperty =
+            DependencyProperty.Register("Value", typeof(double?), typeof(CollapsibleGridSplitter), new UIPropertyMetadata(double.NaN));
+
+        public GridLength? DefaultValue
+        {
+            get { return (GridLength?)GetValue(DefaultValueProperty); }
+            set { SetValue(DefaultValueProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for DefaultValue.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty DefaultValueProperty =
+            DependencyProperty.Register("DefaultValue", typeof(GridLength?), typeof(CollapsibleGridSplitter), new UIPropertyMetadata(null));
+
+        public bool CollapseOnly
+        {
+            get { return (bool)GetValue(CollapseOnlyProperty); }
+            set { SetValue(CollapseOnlyProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for CollapseOnly.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty CollapseOnlyProperty =
+            DependencyProperty.Register("CollapseOnly", typeof(bool), typeof(CollapsibleGridSplitter), new UIPropertyMetadata(false, (s, e) => ((CollapsibleGridSplitter)s).OnCollapseOnlyChanged(e)));
+
+        private void OnCollapseOnlyChanged(DependencyPropertyChangedEventArgs e)
+        {
+        }
+
+        #endregion Properties
+
+        #region Methods
+
+        private void SmartGridSplitter_Loaded(object sender, RoutedEventArgs e)
+        {
+        }
+
+        private void _collapsiblePaneGridInfo_IsCollapsedChanged(bool obj)
+        {
+        }
+
+        protected override void OnPreviewMouseDown(MouseButtonEventArgs e)
+        {
+        }
+
+        private void SetGripCursor()
+        {
+        }
+
+        protected override void OnMouseDoubleClick(MouseButtonEventArgs e)
+        {
+        }
+
+        void button_Click(object sender, RoutedEventArgs e)
+        {
+        }
+
+        protected override void OnMouseUp(MouseButtonEventArgs e)
+        {
+        }
+
+        private void UpdateValue()
+        {
+        }
+
+        private void SmartGridSplitter_IsVisibleChanged(object sender, DependencyPropertyChangedEventArgs e)
+        {
+        }
+
+        #endregion Methods
     }
 }
