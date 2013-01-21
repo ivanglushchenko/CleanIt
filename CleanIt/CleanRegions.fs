@@ -31,14 +31,21 @@ let getConstructNodes = function
    | Property(name, f, p)           -> [f :> MemberDeclarationSyntax; p :> MemberDeclarationSyntax]
 
 
-type Member =
-   | Ctor
-   | Event
-   | Field
-   | Property
-   | Method
+type RegionType =
+   | Ctors
+   | Events
+   | Fields
+   | Properties
+   | Methods
    | Other
 
+let getName = function
+   | Ctors      -> ".ctors"
+   | Events     -> "Events"
+   | Fields     -> "Fields"
+   | Properties -> "Properties"
+   | Methods    -> "Methods"
+   | Other      -> "Other"
 
 type RegionRemover() = 
    inherit SyntaxRewriter(false)
@@ -69,11 +76,11 @@ type MemberCollector() =
       if l.Length = 0 then ""
       else " " + System.String.Join(":", l)
 
-   let getSignature (pSyntax:ParameterListSyntax) = join (pSyntax.Parameters |> Seq.map (fun t -> t.Type.ToString()))
-   let getModifiers (tokens:SyntaxTokenList) = join (tokens |> Seq.map (fun t -> t.ValueText))
+   let getSignature (pSyntax: ParameterListSyntax) = join (pSyntax.Parameters |> Seq.map (fun t -> t.Type.ToString()))
+   let getModifiers (tokens: SyntaxTokenList) = join (tokens |> Seq.map (fun t -> t.ValueText))
 
-   let isStatic (tokens:SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "static")
-   let isPublic (tokens:SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "public")
+   let isStatic (tokens: SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "static")
+   let isPublic (tokens: SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "public")
 
    let mutable constructs = Map.empty<string, Construct>
    let mutable constructors = Map.empty<string, ConstructorDeclarationSyntax>
@@ -82,9 +89,7 @@ type MemberCollector() =
    let mutable properties = Map.empty<string, PropertyDeclarationSyntax>
    let mutable methods = Map.empty<string, MethodDeclarationSyntax>
 
-   let toSyntaxList (map:Map<string, #MemberDeclarationSyntax>) regionType = 
-      if map.IsEmpty = true then None
-      else Some(Syntax.List(map |> Map.toList |> List.map (fun (t1, t2) -> t2 :> MemberDeclarationSyntax)))
+   let mutable openRegionMarkers = Map.empty<string, RegionType>
 
    let collectConstructs name =
       let dpPropName = name + "Property"
@@ -97,13 +102,29 @@ type MemberCollector() =
             fields <- fields.Remove(dpPropName)
             properties <- properties.Remove(name)
 
+   let toSyntaxList (map:Map<string, #MemberDeclarationSyntax>) = 
+      if map.IsEmpty = true then None
+      else Some(Syntax.List(map |> Map.toList |> List.map (fun (t1, t2) -> t2 :> MemberDeclarationSyntax)))
 
-   member x.Ctors       with get() = toSyntaxList constructors Ctor
-   member x.Events      with get() = toSyntaxList events Event
-   member x.Fields      with get() = toSyntaxList fields Field
-   member x.Properties  with get() = toSyntaxList properties Property
-   member x.Methods     with get() = toSyntaxList methods Method
-   member x.Constructs  with get() = if constructs.IsEmpty   then None else Some(Syntax.List(constructs |> Map.toList |> List.collect (fun (t1, t2) -> getConstructNodes t2)))
+   let markRegionBorders regionType (tokens: SyntaxList<MemberDeclarationSyntax> option) =
+      match tokens with
+      | Some(l) -> 
+         let first = l.First()
+         let token = first.ToString()
+         openRegionMarkers <- openRegionMarkers.Add (token, regionType)
+         Some(l)
+      | None -> None
+
+   member x.Ctors             with get() = toSyntaxList constructors |> markRegionBorders Ctors
+   member x.Events            with get() = toSyntaxList events |> markRegionBorders Events
+   member x.Fields            with get() = toSyntaxList fields |> markRegionBorders Fields
+   member x.Properties        with get() = 
+                                 let p = properties |> Map.toList |> List.map (fun (t1, t2) -> t2 :> MemberDeclarationSyntax)
+                                 let c = constructs |> Map.toList |> List.collect (fun (t1, t2) -> getConstructNodes t2)
+                                 let fullList = c @ p
+                                 if fullList.IsEmpty then None else Some(Syntax.List(fullList)) |> markRegionBorders Properties
+   member x.Methods           with get() = toSyntaxList methods |> markRegionBorders Methods
+   member x.OpenRegionMarkers with get() = openRegionMarkers
 
    override x.VisitConstructorDeclaration node = 
       constructors <- constructors.Add (node.ParameterList.ChildNodes().Count().ToString() + getModifiers(node.Modifiers), node)
@@ -137,21 +158,17 @@ type MemberArranger(collector:MemberCollector) =
          match members with
          | Some(list) -> node.WithMembers(Syntax.List(list.Concat(node.Members)))
          | None       -> node
-      base.VisitClassDeclaration (node |> extend collector.Methods |> extend collector.Properties |> extend collector.Constructs |> extend collector.Fields |> extend collector.Events |> extend collector.Ctors)
+      base.VisitClassDeclaration (node |> extend collector.Methods |> extend collector.Properties |> extend collector.Fields |> extend collector.Events |> extend collector.Ctors)
 
 
 type RegionRewriter(collector:MemberCollector) = 
    inherit SyntaxRewriter(false)
 
-   let mutable ctorsRegionOpened = false
-   let mutable eventsRegionOpened = false
-   let mutable fieldsRegionOpened = false
-   let mutable propertiesRegionOpened = false
-   let mutable methodsRegionOpened = false
+   let mutable openedRegions = Set.empty<RegionType>
+   let mutable closedRegions = Set.empty<RegionType>
 
-   let addRegionOpenOrClose (isOpen:bool) (token:SyntaxToken) (name:string) =
+   let addRegion (token: SyntaxToken) (region: SyntaxTrivia) =
       let formattedList = (token.LeadingTrivia |> Seq.toList)
-      let region = if isOpen then SyntaxTree.ParseText("#region " + name).GetRoot().GetLeadingTrivia().First() else Syntax.Trivia(Syntax.EndRegionDirectiveTrivia(true))
       match formattedList with
       | EndOfLine(t1) :: Whitespace(t2) :: tl -> 
          let trivia = [eol(); tab(); region; eol(); eol(); t2] @ tl
@@ -159,67 +176,43 @@ type RegionRewriter(collector:MemberCollector) =
       | Whitespace(t1) :: tl -> token.WithLeadingTrivia([Syntax.Whitespace(t1.ToFullString()); tab(); region] @ [eol(); eol()] @ formattedList)
       | _ -> token.WithLeadingTrivia(eol() :: tab() :: region :: formattedList)
 
-   let openRegion = addRegionOpenOrClose true
-   let closeRegion = addRegionOpenOrClose false
+   let closeRegion (token: SyntaxToken) (region: RegionType) = 
+      if closedRegions.Contains region then token
+      else
+         closedRegions <- closedRegions.Add region
+         Syntax.Trivia(Syntax.EndRegionDirectiveTrivia(true)) |> addRegion token
+
+   let closeRegions (token: SyntaxToken) (activeRegions: RegionType list) = 
+      let rec closeNext t l =
+         match l with
+         | hd :: tl -> closeNext (closeRegion t hd) tl
+         | _        -> t
+      closeNext token activeRegions
+
+   let closeActiveRegions (token: SyntaxToken) = closeRegions token (Set.difference openedRegions closedRegions |> Set.toList)
+
+   let openRegion (token: SyntaxToken) (region: RegionType) =
+      if openedRegions.Contains region then token
+      else
+         let activeRegions = Set.difference openedRegions closedRegions |> Set.toList
+         openedRegions <- openedRegions.Add region
+         let updToken = SyntaxTree.ParseText("#region " + (getName region)).GetRoot().GetLeadingTrivia().First() |> addRegion token
+         closeRegions updToken activeRegions
 
    override x.VisitToken token =
-      match (token.Parent, ctorsRegionOpened, eventsRegionOpened, fieldsRegionOpened, propertiesRegionOpened, methodsRegionOpened) with
-      | (:? ConstructorDeclarationSyntax, false,     _,     _,     _,     _) -> 
-         ctorsRegionOpened <- true
-         openRegion token ".ctors"
-      | (:? EventFieldDeclarationSyntax,   true, false,     _,     _,     _) ->
-         eventsRegionOpened <- true
-         closeRegion (openRegion token "Events") ".ctors"
-      | (:? EventFieldDeclarationSyntax,      _, false,     _,     _,     _) ->
-         eventsRegionOpened <- true
-         openRegion token "Events"
-      | (:? FieldDeclarationSyntax,        true, false, false,     _,     _) ->
-         fieldsRegionOpened <- true
-         closeRegion (openRegion token "Fields") ".ctors"
-      | (:? FieldDeclarationSyntax,           _,  true, false,     _,     _) ->
-         fieldsRegionOpened <- true
-         closeRegion (openRegion token "Fields") "Events"
-      | (:? FieldDeclarationSyntax,           _,     _, false,     _,     _) ->
-         fieldsRegionOpened <- true
-         openRegion token "Fields"
-      | (:? PropertyDeclarationSyntax,     true, false, false, false,     _) ->
-         propertiesRegionOpened <- true                                      
-         closeRegion (openRegion token "Properties") ".ctors"             
-      | (:? PropertyDeclarationSyntax,        _,  true, false, false,     _) ->
-         propertiesRegionOpened <- true                                      
-         closeRegion (openRegion token "Properties") "Events"             
-      | (:? PropertyDeclarationSyntax,        _,     _,  true, false,     _) ->
-         propertiesRegionOpened <- true                                      
-         closeRegion (openRegion token "Properties") "Fields"             
-      | (:? PropertyDeclarationSyntax,        _,     _,     _, false,     _) ->
-         propertiesRegionOpened <- true
-         openRegion token "Properties"
-      | (:? MethodDeclarationSyntax,       true, false, false, false, false) ->
-         methodsRegionOpened <- true
-         closeRegion (openRegion token "Methods") ".ctors"
-      | (:? MethodDeclarationSyntax,          _,  true, false, false, false) ->
-         methodsRegionOpened <- true
-         closeRegion (openRegion token "Methods") "Events"
-      | (:? MethodDeclarationSyntax,          _,     _,  true, false, false) ->
-         methodsRegionOpened <- true
-         closeRegion (openRegion token "Methods") "Fields"
-      | (:? MethodDeclarationSyntax,          _,     _,     _,  true, false) ->
-         methodsRegionOpened <- true
-         closeRegion (openRegion token "Methods") "Properties"
-      | (:? MethodDeclarationSyntax,          _,     _,     _,     _, false) ->
-         methodsRegionOpened <- true
-         openRegion token "Methods"
-      | (:? ClassDeclarationSyntax,        true, false, false, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
-         closeRegion token ".ctors"
-      | (:? ClassDeclarationSyntax,           _,  true, false, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
-         closeRegion token "Events"
-      | (:? ClassDeclarationSyntax,           _,     _,  true, false, false) when token.Kind = SyntaxKind.CloseBraceToken ->
-         closeRegion token "Fields"
-      | (:? ClassDeclarationSyntax,           _,     _,     _,  true, false)  when token.Kind = SyntaxKind.CloseBraceToken ->
-         closeRegion token "Properties"
-      | (:? ClassDeclarationSyntax,           _,     _,     _,     _,  true)  when token.Kind = SyntaxKind.CloseBraceToken ->
-         closeRegion token "Methods"
-      | _ -> base.VisitToken token
+      let parent = token.Parent.ToString()
+      if collector.OpenRegionMarkers.ContainsKey parent then
+         match collector.OpenRegionMarkers.[parent] with
+         | Ctors      -> openRegion token Ctors
+         | Events     -> openRegion token Events
+         | Fields     -> openRegion token Fields
+         | Properties -> openRegion token Properties
+         | Methods    -> openRegion token Methods
+         | Other      -> base.VisitToken token
+      else
+         match token.Parent with
+         | :? ClassDeclarationSyntax when token.Kind = SyntaxKind.CloseBraceToken -> closeActiveRegions token
+         | _                                                                      -> base.VisitToken token
 
 
 type FormatHelper() =
