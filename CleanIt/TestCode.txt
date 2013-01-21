@@ -28,6 +28,27 @@ namespace BetterWpfControls
 
         #endregion .ctors
 
+		/// <summary>
+        /// Gets/sets Type.
+        /// </summary>
+        public ComparisionType Type
+        {
+            [System.Diagnostics.DebuggerStepThrough]
+            get { return p_Type; }
+            [System.Diagnostics.DebuggerStepThrough]
+            set
+            {
+                if (p_Type != value)
+                {
+                    p_Type = value;
+                    OnPropertyChanged("Type");
+                    OnTypeChanged();
+                }
+            }
+        }
+        private ComparisionType p_Type;
+        partial void OnTypeChanged();
+
         #region Fields
 
         private UIElement _collapsiblePane;
