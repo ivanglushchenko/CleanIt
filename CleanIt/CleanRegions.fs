@@ -20,15 +20,15 @@ let tab() = Syntax.Whitespace("\t", false)
 
 type Construct =
     | DependencyProperty of string * FieldDeclarationSyntax * PropertyDeclarationSyntax
-    | Property of string * FieldDeclarationSyntax * PropertyDeclarationSyntax
+    | AutoGenProperty    of string * FieldDeclarationSyntax * PropertyDeclarationSyntax
     
 let getConstructName = function
    | DependencyProperty(name, _, _) -> name
-   | Property(name, _, _)           -> name
+   | AutoGenProperty(name, _, _)    -> name
 
 let getConstructNodes = function
    | DependencyProperty(name, f, p) -> [f :> MemberDeclarationSyntax; p :> MemberDeclarationSyntax]
-   | Property(name, f, p)           -> [f :> MemberDeclarationSyntax; p :> MemberDeclarationSyntax]
+   | AutoGenProperty(name, f, p)    -> [p :> MemberDeclarationSyntax; f :> MemberDeclarationSyntax]
 
 
 type RegionType =
@@ -93,6 +93,7 @@ type MemberCollector() =
 
    let collectConstructs name =
       let dpPropName = name + "Property"
+      let propBackingFieldName = "p_" + name
       if fields.ContainsKey(dpPropName) && properties.ContainsKey(name) then
          let fNode = fields.[dpPropName]
          let pNode = properties.[name]
@@ -100,6 +101,14 @@ type MemberCollector() =
             let c = DependencyProperty(name, fNode, pNode)
             constructs <- constructs.Add (name, c)
             fields <- fields.Remove(dpPropName)
+            properties <- properties.Remove(name)
+      else if fields.ContainsKey(propBackingFieldName) && properties.ContainsKey(name) then
+         let fNode = fields.[propBackingFieldName]
+         let pNode = properties.[name]
+         if fNode.Declaration.Type.ToString() = pNode.Type.ToString() then
+            let c = AutoGenProperty(name, fNode, pNode)
+            constructs <- constructs.Add (name, c)
+            fields <- fields.Remove(propBackingFieldName)
             properties <- properties.Remove(name)
 
    let toSyntaxList (map:Map<string, #MemberDeclarationSyntax>) = 
@@ -137,7 +146,7 @@ type MemberCollector() =
    override x.VisitFieldDeclaration node =
       let name = node.Declaration.Variables.First().Identifier.ValueText
       fields <- fields.Add (name, node)
-      collectConstructs (if name.EndsWith "Property" then name.Substring(0, name.Length - 8) else name)
+      collectConstructs (if name.EndsWith "Property" then name.Substring(0, name.Length - 8) else if name.StartsWith "p_" then name.Substring(2) else name)
       null
 
    override x.VisitPropertyDeclaration node =
