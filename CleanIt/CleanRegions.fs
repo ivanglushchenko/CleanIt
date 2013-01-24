@@ -57,6 +57,7 @@ type MemberType =
       | Construct -> "Member: Construct"
       | Class     -> "Member: Class"
  
+
 let toRegionName = function
    | Ctor      -> ".ctors"
    | Event     -> "Events"
@@ -123,14 +124,6 @@ let rec getParentClass (node: SyntaxNode) =
 type MemberCollector() = 
    inherit SyntaxRewriter(false)
 
-   let join (s:string seq) = 
-      let l = s.ToArray()
-      if l.Length = 0 then ""
-      else " " + System.String.Join(":", l)
-
-   let getSignature (pSyntax: ParameterListSyntax) = join (pSyntax.Parameters |> Seq.map (fun t -> t.Type.ToString()))
-   let getModifiers (tokens: SyntaxTokenList) = join (tokens |> Seq.map (fun t -> t.ValueText))
-
    let isStatic (tokens: SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "static")
    let isPublic (tokens: SyntaxTokenList) = tokens |> Seq.exists (fun t -> t.ValueText = "public")
 
@@ -174,7 +167,6 @@ type MemberCollector() =
 
    member x.Members with get() = membersMap
    member x.OpenRegionMarkers with get() = openRegionMarkers
-   member x.Classes           with get() = classes
 
    override x.VisitClassDeclaration node =
       let parentClass = getParentClass node
@@ -217,16 +209,15 @@ type MemberArranger(collector: MemberCollector) =
          let classMembers = collector.Members.Value.[className]
          let extend (memberType: MemberType) (node: ClassDeclarationSyntax) = 
             if classMembers.ContainsKey memberType then
-               let members = classMembers.[memberType] |> Seq.toList
-               let rec extendClasses (classes: MemberDeclarationSyntax list) =
-                  if classes.IsEmpty then []
-                  else (classes.Head :?> ClassDeclarationSyntax |> extendClass) :: extendClasses classes.Tail
-               if memberType = Class then
-                  let extendedMembers = extendClasses members
-                  node.WithMembers(Syntax.List(extendedMembers.Concat(node.Members)))
-               else node.WithMembers(Syntax.List(members.Concat(node.Members)))
+               let members = node.Members |> Seq.toList |> List.append (classMembers.[memberType] |> Seq.toList |> extendClasses)
+               node.WithMembers(Syntax.List(members))
             else node
          node |> extend Class |> extend Method |> extend Property |> extend Field |> extend Event |> extend Ctor
+      and extendClasses (l: MemberDeclarationSyntax list) =
+         match l with
+         | ClassDeclaration(c) :: tl -> extendClass(c) :> MemberDeclarationSyntax :: extendClasses(tl)
+         | hd :: tl                  -> hd :: extendClasses(tl)
+         | _                         -> []
       extendClass node :> SyntaxNode
 
 
@@ -299,7 +290,7 @@ type FormatHelper() =
          | _ -> token
       | SyntaxKind.CloseParenToken ->
          if token.GetPreviousToken().Kind = SyntaxKind.CloseBraceToken then token.WithLeadingTrivia() else token
-      | _ -> token
+      | _                          -> token
 
 
 let cleanRegions (root:CompilationUnitSyntax) =
