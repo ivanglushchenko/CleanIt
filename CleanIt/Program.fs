@@ -9,6 +9,7 @@ open Roslyn.Services
 open Roslyn.Services.CSharp
 open CleanUsings
 open CleanRegions
+open SolutionCrawler
 
 let rec printNode (node:SyntaxNode) level =
    let prepend (s : string) minLength = 
@@ -28,6 +29,7 @@ let rec printNode (node:SyntaxNode) level =
    printf "%s %s\n" text (sprintf "%s %s" (prepend (sprintf "[%i]" (nodeText.LineCount)) 6) ((getFirstNonEmptyLine (nodeText.Lines |> Seq.toList))))
    node.ChildNodes() |> Seq.iter(fun c -> printNode c (level+1))
 
+let cleanNode (node: CompilationUnitSyntax) = Some(node |> cleanUsings |> cleanRegions)
 
 let cleanFile fileName = 
     printfn "processing file \"%s\"\n" fileName
@@ -45,10 +47,10 @@ let cleanFile fileName =
     writer.Flush()
     writer.Close()
 
-
 [<EntryPoint>]
 let main argv = 
-    cleanFile "TestCode.txt"//"c:\Temp\App2.cs"
+    forEachFileInProject (Name("c:\\Temp\\_004\\BetterWpfControls\\BetterWpfControls.Demo\\BetterWpfControls.Demo.csproj")) cleanNode |> ignore
+    //cleanFile "c:\\Temp\\_004\\BetterWpfControls\\BetterWpfControls.Demo\\App.xaml.cs"//"c:\Temp\App2.cs"
     //System.Console.ReadLine() |> ignore
     0 // return an integer exit code
 

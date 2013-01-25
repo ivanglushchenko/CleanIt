@@ -7,6 +7,9 @@ open Roslyn.Compilers.Common
 open Roslyn.Services
 open Roslyn.Services.CSharp
 
+/// ----------------------------------------------------------
+/// Visitor which collects using directives
+/// ----------------------------------------------------------
 type UsingDirectiveRewrite() = 
    inherit SyntaxRewriter(false)
 
@@ -27,10 +30,9 @@ type UsingDirectiveRewrite() =
          usings.Add niceUsing
       else
          usings.Add node
-      
       null
    
-let cleanUsings (root:CompilationUnitSyntax) =
+let cleanUsings (root: CompilationUnitSyntax) =
    let rewriter = UsingDirectiveRewrite()
    let nodeWithNoUsings = root.Accept(rewriter) :?> CompilationUnitSyntax
    let usings = rewriter.getCollectedUsings()

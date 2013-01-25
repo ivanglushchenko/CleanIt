@@ -1,166 +1,206 @@
-﻿// -------------------------------------------------------------------------------
-// 
-// This file is part of the FluidKit project: http://www.codeplex.com/fluidkit
-// 
-// Copyright (c) 2008, The FluidKit community 
-// All rights reserved.
-// 
-// Redistribution and use in source and binary forms, with or without modification, 
-// are permitted provided that the following conditions are met:
-// 
-// * Redistributions of source code must retain the above copyright notice, this 
-// list of conditions and the following disclaimer.
-// 
-// * Redistributions in binary form must reproduce the above copyright notice, this 
-// list of conditions and the following disclaimer in the documentation and/or 
-// other materials provided with the distribution.
-// 
-// * Neither the name of FluidKit nor the names of its contributors may be used to 
-// endorse or promote products derived from this software without specific prior 
-// written permission.
-// 
-
-
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
-// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
-// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE 
-// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR 
-// ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES 
-// (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
-// LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON 
-// ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT 
-// (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS 
-// SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
-// -------------------------------------------------------------------------------
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
 using System.Windows;
-
+using BetterWpfControls.Components;
 using System.Windows.Controls;
-using System.Windows.Media;
+using System.Windows.Input;
+using System.Windows.Data;
+using BetterWpfControls.Converters;
+using BetterWpfControls.Panels;
 
-namespace FluidKit.Controls
+namespace BetterWpfControls
 {
-	public class BalloonDecorator : Decorator
-	{
+    [TemplatePart(Name = "PART_SelectedContentHost", Type = typeof(ContentPresenter))]
+    [TemplatePart(Name = "PART_HeaderPanel", Type = typeof(ScrollablePanel))]
+    [TemplatePart(Name = "PART_QuickLinksHost", Type = typeof(MenuButton))]
+    public class TabControl : System.Windows.Controls.TabControl
+    {
+        #region .ctors
 
+        static TabControl()
+        {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(TabControl), new FrameworkPropertyMetadata(typeof(TabControl)));
+        }
 
-		private static double _thickness;
-		private static int OpeningGap = 10;
+        public TabControl()
+        {
+            NavigateToItemCommand = new DelegateCommand<object>(NavigateToItem);
+        }
 
-		public Brush Background
+        #endregion .ctors
+
+        #region Properties
+
+        #region ScrollToLeftContent
+
+        public object ScrollToLeftContent
+        {
+            get { return (object)GetValue(ScrollToLeftContentProperty); }
+            set { SetValue(ScrollToLeftContentProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for ScrollToLeftContent.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ScrollToLeftContentProperty =
+            DependencyProperty.Register("ScrollToLeftContent", typeof(object), typeof(TabControl), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsMeasure));
+
+        #endregion ScrollToLeftContent
+
+        #region ScrollToRightContent
+
+        public object ScrollToRightContent
+        {
+            get { return (object)GetValue(ScrollToRightContentProperty); }
+            set { SetValue(ScrollToRightContentProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for ScrollToRightContent.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ScrollToRightContentProperty =
+            DependencyProperty.Register("ScrollToRightContent", typeof(object), typeof(TabControl), new FrameworkPropertyMetadata(null, FrameworkPropertyMetadataOptions.AffectsMeasure));
+
+        #endregion ScrollToRightContent
+
+        #region NavigateToItemCommand
+
+        public ICommand NavigateToItemCommand
+        {
+            get { return (ICommand)GetValue(NavigateToItemCommandProperty); }
+            set { SetValue(NavigateToItemCommandProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for NavigateToItemCommand.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty NavigateToItemCommandProperty =
+            DependencyProperty.Register("NavigateToItemCommand", typeof(ICommand), typeof(TabControl), new UIPropertyMetadata(null));
+
+        #endregion NavigateToItemCommand
+
+        #region ShowQuickLinksButton
+
+        public bool ShowQuickLinksButton
+        {
+            get { return (bool)GetValue(ShowQuickLinksButtonProperty); }
+            set { SetValue(ShowQuickLinksButtonProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for ShowQuickLinksButton.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty ShowQuickLinksButtonProperty =
+            DependencyProperty.Register("ShowQuickLinksButton", typeof(bool), typeof(TabControl), new UIPropertyMetadata(true));
+
+        #endregion ShowQuickLinksButton
+
+        #region SelectItemOnScroll
+
+        public bool SelectItemOnScroll
+        {
+            get { return (bool)GetValue(SelectItemOnScrollProperty); }
+            set { SetValue(SelectItemOnScrollProperty, value); }
+        }
+
+        // Using a DependencyProperty as the backing store for SelectItemOnScroll.  This enables animation, styling, binding, etc...
+        public static readonly DependencyProperty SelectItemOnScrollProperty =
+            DependencyProperty.Register("SelectItemOnScroll", typeof(bool), typeof(TabControl), new UIPropertyMetadata(true));
+
+        #endregion SelectItemOnScroll
+
+        #endregion Properties
+
+        #region Methods
+
+        public override void OnApplyTemplate()
+        {
+            base.OnApplyTemplate();
+
+            var tp = Template.FindName("PART_HeaderPanel", this) as ScrollablePanel;
+            if (tp != null)
+            {
+                tp.SetBinding(ScrollablePanel.SelectedItemProperty, new Binding(SelectedItemProperty.Name) { Mode = BindingMode.TwoWay, Source = this });
+                tp.SetBinding(ScrollablePanel.ScrollToLeftContentProperty, new Binding(ScrollToLeftContentProperty.Name) { Mode = BindingMode.TwoWay, Source = this });
+                tp.SetBinding(ScrollablePanel.ScrollToRightContentProperty, new Binding(ScrollToRightContentProperty.Name) { Mode = BindingMode.TwoWay, Source = this });
+                tp.SetBinding(ScrollablePanel.SelectItemOnScrollProperty, new Binding(SelectItemOnScrollProperty.Name) { Mode = BindingMode.TwoWay, Source = this });
+            }
+            var sb = Template.FindName("PART_QuickLinksHost", this) as MenuButton;
+            if (sb != null)
+            {
+                if (tp != null)
+                {
+                    var b = new MultiBinding() { Converter = new BoolToVisibilityConverter() };
+                    b.Bindings.Add(new Binding(ScrollablePanel.IsTruncatingItemsProperty.Name) { Source = tp, Mode = BindingMode.OneWay });
+                    b.Bindings.Add(new Binding(TabControl.ShowQuickLinksButtonProperty.Name) { Source = this, Mode = BindingMode.OneWay });
+                    sb.SetBinding(FrameworkElement.VisibilityProperty, b);
+                }
+                sb.SetBinding(MenuButton.ItemsSourceProperty, new Binding("Items") { Mode = BindingMode.OneWay, Source = this });
+                sb.SetBinding(MenuButton.CommandProperty, new Binding(NavigateToItemCommandProperty.Name) { Mode = BindingMode.OneWay, Source = this });
+                if (sb.ItemTemplate == null && sb.GetBindingExpression(MenuButton.ItemTemplateProperty) == null)
+                {
+                    var factory = new FrameworkElementFactory(typeof(ContentPresenter));
+                    factory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Left);
+                    factory.SetBinding(ContentPresenter.ContentProperty, new Binding() { Converter = new WrapVisualConverter(), ConverterParameter = this });
+                    factory.SetBinding(ContentPresenter.ContentTemplateProperty, new Binding(ItemTemplateProperty.Name) { Source = this });
+                    sb.ItemTemplate = new DataTemplate() { VisualTree = factory };
+                }
+            }
+        }
+
+				public ColumnSortInfo SortInfo
 		{
-			get { return (Brush) GetValue(BackgroundProperty); }
-			set { SetValue(BackgroundProperty, value); }
+			get { return _currentSortRequest; }
+			set { _currentSortRequest = value; }
 		}
 
-		public Brush BorderBrush
+		public SmartObservableCollection<T> Items
 		{
-			get { return (Brush) GetValue(BorderBrushProperty); }
-			set { SetValue(BorderBrushProperty, value); }
-		}
-
-		public double PointerLength
-		{
-			get { return (double) GetValue(PointerLengthProperty); }
-			set { SetValue(PointerLengthProperty, value); }
-		}
-
-		public double CornerRadius
-		{
-			get { return (double) GetValue(CornerRadiusProperty); }
-			set { SetValue(CornerRadiusProperty, value); }
-		}
-
-		protected override Size ArrangeOverride(Size arrangeSize)
-		{
-			UIElement child = Child;
-			if (child != null)
+			get { return _Items; }
+			set
 			{
-				double pLength = PointerLength;
-				Rect innerRect =
-					Rect.Inflate(
-						new Rect(pLength, 0, Math.Max(0, arrangeSize.Width - pLength), arrangeSize.Height),
-						-1*_thickness, -1*_thickness);
-				child.Arrange(innerRect);
-			}
-
-			return arrangeSize;
-		}
-
-		protected override Size MeasureOverride(Size constraint)
-		{
-			UIElement child = Child;
-			Size size = new Size();
-			if (child != null)
-			{
-				Size innerSize = new Size(Math.Max(0, constraint.Width - PointerLength),
-				                          constraint.Height);
-				child.Measure(innerSize);
-				size.Width += child.DesiredSize.Width;
-				size.Height += child.DesiredSize.Height;
-			}
-
-			Size borderSize = new Size(2*_thickness, 2*_thickness);
-			size.Width += borderSize.Width + PointerLength;
-			size.Height += borderSize.Height;
-
-			return size;
-		}
-
-		protected override void OnRender(DrawingContext dc)
-		{
-			Rect rect = new Rect(0, 0, RenderSize.Width, RenderSize.Height);
-
-			dc.PushClip(new RectangleGeometry(rect));
-			dc.DrawGeometry(Background, new Pen(BorderBrush, _thickness),
-			                CreateBalloonGeometry(rect));
-			dc.Pop();
-		}
-
-		private StreamGeometry CreateBalloonGeometry(Rect rect)
-		{
-			double radius = Math.Min(CornerRadius, rect.Height/2);
-			double pointerLength = PointerLength;
-
-			// All the points on the path
-			Point[] points =
+				if (_Items != value)
 				{
-					new Point(pointerLength + radius, 0), new Point(rect.Width - radius, 0), // Top
-					new Point(rect.Width, radius), new Point(rect.Width, rect.Height - radius), // Right
-					new Point(rect.Width - radius, rect.Height), // Bottom
-					new Point(pointerLength + radius, rect.Height), // Bottom
-					new Point(pointerLength, rect.Height - radius), // Left
-					new Point(pointerLength, radius) // Left
-				};
-
-			StreamGeometry geometry = new StreamGeometry();
-			geometry.FillRule = FillRule.Nonzero;
-			using (StreamGeometryContext ctx = geometry.Open())
-			{
-				ctx.BeginFigure(points[0], true, true);
-				ctx.LineTo(points[1], true, false);
-				ctx.ArcTo(points[2], new Size(radius, radius), 0, false, SweepDirection.Clockwise,
-				          true, false);
-				ctx.LineTo(points[3], true, false);
-				ctx.ArcTo(points[4], new Size(radius, radius), 0, false, SweepDirection.Clockwise,
-				          true, false);
-				ctx.LineTo(points[5], true, false);
-
-				ctx.ArcTo(points[6], new Size(radius, radius), 0, false, SweepDirection.Clockwise,
-				          true, false);
-
-				// Pointer
-				if (pointerLength > 0)
-				{
-					ctx.LineTo(rect.BottomLeft, true, false);
-					ctx.LineTo(new Point(pointerLength, rect.Height - radius - OpeningGap), true, false);
+					_Items = value;
+					OnPropertyChanged("Items");
+					OnItemsChanged();
 				}
-				ctx.LineTo(points[7], true, false);
-
-				ctx.ArcTo(points[0], new Size(radius, radius), 0, false, SweepDirection.Clockwise,
-				          true, false);
 			}
-			return geometry;
 		}
-	}
+		private SmartObservableCollection<T> _Items;
+		partial void OnItemsChanged();
+
+		
+
+		private FeederRepository _feedersRepository;
+		private Logger _logger;
+
+		public bool HasMoreItems
+		{
+			get { return _HasMoreItems; }
+			set
+			{
+				if (_HasMoreItems != value)
+				{
+					_HasMoreItems = value;
+					OnPropertyChanged("HasMoreItems");
+					OnHasMoreItemsChanged();
+				}
+			}
+		}
+		private bool _HasMoreItems;
+		private object _syncObject = new object();
+		partial void OnHasMoreItemsChanged();
+
+        protected override DependencyObject GetContainerForItemOverride()
+        {
+            return new TabItem();
+        }
+
+        protected override bool IsItemItsOwnContainerOverride(object item)
+        {
+            return item is TabItem;
+        }
+
+        private void NavigateToItem(object item)
+        {
+            SelectedItem = item;
+        }
+
+        #endregion Methods
+    }
 }
